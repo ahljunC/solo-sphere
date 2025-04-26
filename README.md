@@ -36,54 +36,44 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
-## 🚀 AI-Enhanced MVP for Your FreshBooks Alternative
-1. Authentication + Client Management
-Sign up, log in
+# 🚀 AI-Enhanced MVP for FreshBooks Alternative
 
-Add/edit clients
+## 1. Authentication + Client Management
+- User sign up/login
+- Add, edit, delete client profiles
+- (No AI yet)
 
-✅ (No AI needed yet)
+## 2. Invoicing (with AI Boosts)
+- Create and send invoices manually
+- **AI-suggested line items** based on project history
+- **AI-generated payment reminder emails** for overdue invoices
 
-2. Invoicing (with AI Boosts)
-Create invoices manually
+## 3. Expense Tracking (with AI Categorization)
+- Manually log expenses (amount, date, description)
+- Upload and store receipts
+- **AI auto-categorizes expenses** into appropriate categories
+- **Smart anomaly detection** for unusual expenses
 
-AI Suggests line items when you start typing (based on past invoices or templates)
+## 4. Time Tracking
+- Start/stop timers for projects
+- Manually log billable hours
+- Convert tracked time into invoice items
+- (No AI yet)
 
-AI Drafts payment reminder emails if invoices are overdue
+## 5. Basic Financial Dashboard (with AI Insights)
+- View income, expenses, outstanding invoices
+- **AI-generated smart tips** (e.g., expense spikes, cashflow warnings)
 
-🧠 Light AI: just autocomplete + smart suggestions, low cost to build with GPT-4 or Claude API
+## 6. Reports (Lite)
+- Generate simple reports: profit & loss, expenses by category
+- **AI-generated monthly financial summaries** sent via email
 
-3. Expense Tracking (with AI Categorization)
-Upload expenses manually (amount + receipt upload)
+# 🎯 AI Layer Overview
 
-AI auto-categorizes expense (e.g., "Office Supplies", "Travel", etc.)
-
-Smart flags if an expense looks odd (e.g., a huge Uber ride at 2 AM 🕑)
-
-🧠 You can use AWS Textract + a simple classification model or even OpenAI embeddings to start!
-
-4. Time Tracking (Basic)
-Start/stop a timer for a project
-
-Log billable hours
-
-Convert to invoice items later
-
-✅ (No AI needed yet)
-
-5. Basic Financial Dashboard (with Light AI Insights)
-Show income, expenses, outstanding invoices
-
-AI Smart Tip: "Hey, your expenses are 25% higher than last month — want me to show you why?"
-
-🧠 Just a simple rule-based check first — full predictive cash flow stuff can come in Phase 2!
-
-6. Reports (Lite)
-Profit & loss
-
-Expenses by category
-
-AI-Generated Monthly Summary Email (Optional)
-
-"This month you invoiced $4,500, collected $3,900, spent $1,200."
+| Area        | AI Functionality                           | Complexity |
+|-------------|---------------------------------------------|------------|
+| Invoicing   | Line item suggestions, reminder emails     | Easy       |
+| Expenses    | Auto-categorization, anomaly detection      | Medium     |
+| Dashboard   | Smart financial tips based on trends        | Easy       |
+| Reports     | Monthly financial summaries (plain text)    | Easy       |
 
