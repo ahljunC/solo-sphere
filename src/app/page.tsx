@@ -9,12 +9,16 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
 
   const handleLogin = async () => {
-    const { error } = await signInWithEmail(email, password)
+    const { data, error } = await signInWithEmail(email, password)
+
+    console.log("Login response:", data, error)
+
     if (error) {
       setError(error.message)
     } else {
       // Redirect or show success
-      window.location.href = '/'
+      // window.location.href = '/'
+      console.log("Login successful:", data)
     }
   }
 
