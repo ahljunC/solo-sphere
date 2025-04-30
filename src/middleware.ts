@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
 
   // If trying to access a protected route without being authenticated, redirect
   if (isProtectedRoute && !accessToken) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
   return NextResponse.next(); // Allow access if authenticated
