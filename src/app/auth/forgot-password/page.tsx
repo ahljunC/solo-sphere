@@ -2,33 +2,35 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { resetPassword } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
+import { AuthForm, AuthField } from '@/components/auth/AuthForm'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { resetUserPassword, isLoading } = useAuth()
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Define form fields
+  const forgotPasswordFields: AuthField[] = [
+    {
+      name: 'email',
+      type: 'email',
+      label: 'Email address',
+      placeholder: 'Enter your email address',
+      autoComplete: 'email',
+      required: true
+    }
+  ]
+
+  const handleResetPassword = async (values: Record<string, string>) => {
     setError(null)
-    setIsLoading(true)
-
-    try {
-      const { error } = await resetPassword(email)
-      
-      if (error) {
-        setError(error.message)
-      } else {
-        setIsSubmitted(true)
-      }
-    } catch (err) {
-      setError('An unexpected error occurred')
-    } finally {
-      setIsLoading(false)
+    const { success, error } = await resetUserPassword(values.email)
+    
+    if (success) {
+      setIsSubmitted(true)
+    } else if (error) {
+      setError(error)
     }
   }
 
@@ -68,39 +70,21 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        <form onSubmit={handleResetPassword} className="mt-8 space-y-6">
-          <Input
-            id="email"
-            type="email"
-            label="Email address"
-            placeholder="Enter your email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
+        <div className="mt-8">
+          <AuthForm
+            fields={forgotPasswordFields}
+            onSubmit={handleResetPassword}
+            submitButtonText="Send reset link"
+            isLoading={isLoading}
+            error={error}
           />
 
-          {error && (
-            <div className="rounded-md bg-red-50 p-3">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            variant="primary"
-            fullWidth
-            isLoading={isLoading}
-          >
-            Send reset link
-          </Button>
-
-          <div className="text-center">
+          <div className="mt-4 text-center">
             <Link href="/auth/login" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
               Back to login
             </Link>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )
