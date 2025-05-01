@@ -1,79 +1,176 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SoloSphere Frontend Architecture
+
+## Overview
+
+This repository contains the frontend codebase for SoloSphere, a comprehensive business management platform for freelancers. The application is built with a modern React stack using Next.js, TypeScript, and Supabase.
+
+## Architecture
+
+The project follows a component-based architecture with clear separation of concerns and strong typing throughout. The application is organized around the following principles:
+
+1. **Component-Based Structure**: UI elements are broken down into reusable, modular components
+2. **Separation of Concerns**: Clear division between UI components, business logic, and data access
+3. **Type Safety**: Comprehensive TypeScript typing for all components and functions
+4. **Performance Optimization**: Memoization and optimized rendering where appropriate
+5. **Accessibility**: WCAG compliance built into component design
+
+## Directory Structure
+
+```
+src/
+├── app/                      # Next.js App Router pages
+│   ├── (auth)/               # Authentication routes
+│   ├── (dashboard)/          # Protected dashboard routes
+│   ├── api/                  # API routes
+│   ├── globals.css           # Global styles
+│   └── layout.tsx            # Root layout
+├── components/               # Shared React components
+│   ├── auth/                 # Authentication-specific components
+│   ├── common/               # Common components used across features
+│   ├── ui/                   # Core UI components (presentational)
+│   └── [feature]/            # Feature-specific components
+├── lib/                      # Core libraries and utilities
+│   ├── auth/                 # Authentication utilities
+│   ├── utils/                # Utility functions
+│   └── supabase/             # Supabase client and utilities
+├── hooks/                    # Custom React hooks
+├── context/                  # React Context providers
+├── types/                    # TypeScript type definitions
+└── styles/                   # Styling utilities and variables
+```
+
+## Key Components
+
+### Authentication Components
+
+The authentication system is built with security and user experience in mind:
+
+- `AuthLayout.tsx`: Provides the two-column layout for authentication pages
+- `LoginForm.tsx`: Handles user authentication with email/password and social providers
+- `AuthContext.tsx`: Manages authentication state and provides auth methods
+
+### UI Component Library
+
+The UI components follow a design system pattern:
+
+- **Button**: Customizable button component with variants, sizes, and states
+- **FormElements**: Form controls including inputs, selects, checkboxes, etc.
+- **Loader**: Loading indicator with customizable size and appearance
+- **Additional UI components**: (to be added as needed)
+
+## Component Design Philosophy
+
+### Presentational Components
+
+UI components are built with the following principles:
+
+1. **Single Responsibility**: Each component has one clear purpose
+2. **Prop-Based Configuration**: Components are configurable via well-typed props
+3. **Self-Contained Styling**: Components include their own styling
+4. **Accessibility Compliance**: ARIA attributes and keyboard navigation built-in
+5. **Performance Optimization**: Memoization for expensive components
+
+### Container Components
+
+Container components focus on:
+
+1. **Data Fetching**: Handling API calls and data management
+2. **State Management**: Managing complex state and side effects
+3. **Business Logic**: Implementing business rules and workflows
+4. **Event Handling**: Processing user interactions
+
+## State Management
+
+The application uses a hybrid state management approach:
+
+1. **Local Component State**: For UI-specific state
+2. **React Context**: For shared state like authentication and theme
+3. **Server State**: Managed with data fetching hooks for API data
+
+## Styling Approach
+
+The application uses Tailwind CSS for styling with:
+
+1. **Utility-First Approach**: Composition of utility classes
+2. **Custom Design Tokens**: Extended Tailwind configuration with project-specific tokens
+3. **Component Variants**: Variant pattern for consistent component styling
+
+## Authentication Implementation
+
+Authentication is implemented using Supabase Auth:
+
+1. **Auth Context**: Provides authentication state and methods
+2. **Protected Routes**: Middleware for authentication checks
+3. **Login/Register Forms**: User-friendly authentication interfaces
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js (v18+)
+- npm or yarn
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository
+   ```
+   git clone https://github.com/your-username/solo-sphere.git
+   cd solo-sphere
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Install dependencies
+   ```
+   npm install
+   ```
 
-## Learn More
+3. Set up environment variables
+   ```
+   cp .env.example .env.local
+   ```
+   Then update the `.env.local` file with your Supabase URL and anon key.
 
-To learn more about Next.js, take a look at the following resources:
+4. Start the development server
+   ```
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Development Guidelines
 
-## Deploy on Vercel
+### Creating New Components
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+When creating a new component:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Create a directory for the component in the appropriate location
+2. Create the main component file with TypeScript typing for props
+3. Export the component from an index.ts file
+4. Document the component with JSDoc comments
 
+### Type Safety
 
-# 🚀 AI-Enhanced MVP for FreshBooks Alternative
+Ensure all components and functions are properly typed:
 
-## 1. Authentication + Client Management
-- User sign up/login
-- Add, edit, delete client profiles
-- (No AI yet)
+1. Use TypeScript interfaces for props and state
+2. Avoid using `any` type
+3. Use proper return types for functions
+4. Leverage TypeScript's utility types when appropriate
 
-## 2. Invoicing (with AI Boosts)
-- Create and send invoices manually
-- **AI-suggested line items** based on project history
-- **AI-generated payment reminder emails** for overdue invoices
+### Performance Considerations
 
-## 3. Expense Tracking (with AI Categorization)
-- Manually log expenses (amount, date, description)
-- Upload and store receipts
-- **AI auto-categorizes expenses** into appropriate categories
-- **Smart anomaly detection** for unusual expenses
+Optimize component rendering:
 
-## 4. Time Tracking
-- Start/stop timers for projects
-- Manually log billable hours
-- Convert tracked time into invoice items
-- (No AI yet)
+1. Use `React.memo` for pure components that render often
+2. Use `useCallback` for event handlers passed to child components
+3. Use `useMemo` for expensive computations
+4. Implement virtualization for long lists
 
-## 5. Basic Financial Dashboard (with AI Insights)
-- View income, expenses, outstanding invoices
-- **AI-generated smart tips** (e.g., expense spikes, cashflow warnings)
+## Contributing
 
-## 6. Reports (Lite)
-- Generate simple reports: profit & loss, expenses by category
-- **AI-generated monthly financial summaries** sent via email
+1. Create a feature branch
+2. Make your changes
+3. Submit a pull request
 
-# 🎯 AI Layer Overview
+## License
 
-| Area        | AI Functionality                           | Complexity |
-|-------------|---------------------------------------------|------------|
-| Invoicing   | Line item suggestions, reminder emails     | Easy       |
-| Expenses    | Auto-categorization, anomaly detection      | Medium     |
-| Dashboard   | Smart financial tips based on trends        | Easy       |
-| Reports     | Monthly financial summaries (plain text)    | Easy       |
-
+This project is licensed under the MIT License - see the LICENSE file for details.
