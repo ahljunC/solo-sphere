@@ -1,8 +1,7 @@
 import React from 'react';
-import { Form } from '@/components/ui/Form';
-import { ErrorAlert } from './ErrorAlert';
+import { Form, FormError } from '@/components/ui/Form';
 
-interface AuthFormProps<T> {
+interface AuthFormProps<T extends Record<string, unknown>> {
   /**
    * Initial form values
    */
@@ -11,7 +10,7 @@ interface AuthFormProps<T> {
   /**
    * Form submission handler
    */
-  onSubmit: (values: T) => Promise<void>;
+  onSubmit: (values: T) => Promise<void> | void;
   
   /**
    * Form validation function
@@ -19,17 +18,17 @@ interface AuthFormProps<T> {
   validate?: (values: T) => Partial<Record<keyof T, string>>;
   
   /**
-   * Error message to display
+   * Error message to display at the form level
    */
   submitError?: string | null;
   
   /**
-   * Form children components
+   * Form children
    */
   children: React.ReactNode;
   
   /**
-   * Additional CSS classes
+   * Additional CSS class names
    */
   className?: string;
 }
@@ -37,38 +36,32 @@ interface AuthFormProps<T> {
 /**
  * AuthForm component
  * 
- * A specialized form container for authentication forms that includes:
- * - Error handling and display
- * - Consistent styling
- * - Form state management
- * - Validation
+ * A specialized Form wrapper for authentication forms with
+ * consistent layout, validation, and error handling.
  */
-export function AuthForm<T extends Record<string, any>>({
+export function AuthForm<T extends Record<string, unknown>>({
   initialValues,
   onSubmit,
   validate,
   submitError,
   children,
-  className = ''
+  className
 }: AuthFormProps<T>) {
   return (
-    <>
+    <Form
+      initialValues={initialValues}
+      onSubmit={onSubmit}
+      validate={validate}
+      className={`space-y-4 ${className || ''}`}
+    >
       {submitError && (
-        <ErrorAlert 
-          message={submitError} 
-          role="alert"
-          aria-live="assertive"
+        <FormError 
+          error={submitError} 
+          className="bg-red-50 border border-red-200 rounded-md p-3"
         />
       )}
       
-      <Form
-        initialValues={initialValues}
-        onSubmit={onSubmit}
-        validate={validate}
-        className={`space-y-6 ${className}`}
-      >
-        {children}
-      </Form>
-    </>
+      {children}
+    </Form>
   );
 }

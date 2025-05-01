@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, memo, useCallback, useState } from 'react';
+import React, { useRef, memo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, PasswordField } from '@/components/ui/Form';
 import { AuthForm } from './AuthForm';
@@ -29,7 +29,8 @@ interface LoginFormProps {
   redirectUrl?: string;
 }
 
-interface LoginValues {
+// Extend Record<string, unknown> to ensure compatibility with Form component
+interface LoginValues extends Record<string, unknown> {
   email: string;
   password: string;
   rememberMe: boolean;
