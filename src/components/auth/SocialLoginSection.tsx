@@ -21,31 +21,30 @@ interface SocialLoginSectionProps {
 /**
  * SocialLoginSection component
  * 
- * Groups social login buttons in a responsive grid layout
- * with consistent styling and spacing.
+ * Displays social login buttons in a consistent layout.
+ * Handles accessibility and loading states for social authentication options.
  */
-export const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({ 
-  onGoogleLogin, 
-  onFacebookLogin, 
-  isDisabled 
+export const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
+  onGoogleLogin,
+  onFacebookLogin,
+  isDisabled = false
 }) => {
   return (
-    <>
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="mt-6">
+      <div className="grid grid-cols-2 gap-3">
         <SocialButton
           provider="google"
           onClick={onGoogleLogin}
           disabled={isDisabled}
-          className="h-12 text-base sm:h-10 sm:text-sm" // Larger touch targets on mobile
+          aria-label="Sign in with Google"
         />
-        
         <SocialButton
           provider="facebook"
           onClick={onFacebookLogin}
           disabled={isDisabled}
-          className="h-12 text-base sm:h-10 sm:text-sm" // Larger touch targets on mobile
+          aria-label="Sign in with Facebook"
         />
       </div>
-    </>
+    </div>
   );
 };

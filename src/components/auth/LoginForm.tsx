@@ -1,16 +1,13 @@
-import React, { useRef, useEffect, memo, useCallback } from 'react';
-import { useLoginForm } from '@/lib/hooks/useLoginForm';
-
-import { 
-  ErrorAlert, 
-  FormDivider, 
-  SignUpPrompt,
-  EmailField,
-  PasswordField,
-  RememberMeForgotPassword,
-  SubmitButton,
-  SocialLoginSection
-} from './';
+import React, { useRef, useEffect, memo, useCallback, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { TextField, PasswordField } from '@/components/ui/Form';
+import { AuthForm } from './AuthForm';
+import { FormDivider } from './FormDivider';
+import { SignUpPrompt } from './SignUpPrompt';
+import { RememberMeForgotPassword } from './RememberMeForgotPassword'; 
+import { SubmitButton } from './SubmitButton';
+import { SocialLoginSection } from './SocialLoginSection';
+import { useAuth } from '@/lib/auth';
 
 /**
  * Props for the LoginForm component
@@ -30,6 +27,12 @@ interface LoginFormProps {
    * Optional redirection URL after successful login
    */
   redirectUrl?: string;
+}
+
+interface LoginValues {
+  email: string;
+  password: string;
+  rememberMe: boolean;
 }
 
 /**
@@ -56,100 +59,110 @@ export const LoginForm: React.FC<LoginFormProps> = memo(({
   onError,
   redirectUrl = '/dashboard'
 }) => {
-  // Get form state and handlers from hook
-  const {
-    formData,
-    uiState,
-    updateField,
-    handleSubmit,
-    handleSocialLogin
-  } = useLoginForm(redirectUrl, onSuccess, onError);
+  const router = useRouter();
+  const { signIn, signInWithProvider } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Create refs for focus management
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   
-  // Focus the field with error after submission
-  useEffect(() => {
-    if (uiState.error) {
-      if (uiState.error.field === 'email' && emailInputRef.current) {
-        emailInputRef.current.focus();
-      } else if (uiState.error.field === 'password' && passwordInputRef.current) {
-        passwordInputRef.current.focus();
-      }
+  const initialValues: LoginValues = {
+    email: '',
+    password: '',
+    rememberMe: false
+  };
+  
+  const validate = (values: LoginValues) => {
+    const errors: Partial<Record<keyof LoginValues, string>> = {};
+    
+    if (!values.email) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      errors.email = 'Please enter a valid email address';
     }
-  }, [uiState.error]);
+    
+    if (!values.password) {
+      errors.password = 'Password is required';
+    }
+    
+    return errors;
+  };
   
-  // Memoized callbacks for field updates
-  const handleEmailChange = useCallback((value: string) => {
-    updateField('email', value);
-  }, [updateField]);
+  const handleSubmit = async (values: LoginValues) => {
+    setError(null);
+    setIsSubmitting(true);
+    
+    try {
+      await signIn(values.email, values.password);
+      if (onSuccess) onSuccess();
+      router.push(redirectUrl);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
+      if (onError) onError(err instanceof Error ? err : new Error(errorMessage));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
-  const handlePasswordChange = useCallback((value: string) => {
-    updateField('password', value);
-  }, [updateField]);
-  
-  const handleRememberMeChange = useCallback((checked: boolean) => {
-    updateField('rememberMe', checked);
-  }, [updateField]);
-  
-  // Memoized callbacks for social login
-  const handleGoogleLogin = useCallback(() => {
-    handleSocialLogin('google');
-  }, [handleSocialLogin]);
-  
-  const handleFacebookLogin = useCallback(() => {
-    handleSocialLogin('facebook');
-  }, [handleSocialLogin]);
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    setError(null);
+    
+    try {
+      await signInWithProvider(provider);
+      // The OAuth flow will redirect the user away from the app
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : `${provider} login failed`;
+      setError(errorMessage);
+      if (onError) onError(err instanceof Error ? err : new Error(errorMessage));
+    }
+  };
   
   return (
     <div className="w-full">
-      <ErrorAlert 
-        message={uiState.error?.message} 
-        role="alert"
-        aria-live="assertive"
-      />
-      
-      <form 
-        onSubmit={handleSubmit} 
-        className="space-y-6" 
-        noValidate
-        aria-describedby={uiState.error ? "login-form-error" : undefined}
-        aria-live="polite"
+      <AuthForm
+        initialValues={initialValues}
+        onSubmit={handleSubmit}
+        validate={validate}
+        submitError={error}
       >
-        <EmailField 
+        <TextField
           ref={emailInputRef}
-          value={formData.email}
-          onChange={handleEmailChange}
-          error={uiState.error?.field === 'email' ? uiState.error.message : undefined}
-          isDisabled={uiState.isLoading}
+          name="email"
+          label="Email"
+          type="email"
+          placeholder="your@email.com"
+          autoComplete="email"
+          isRequired
+          disabled={isSubmitting}
         />
         
-        <PasswordField 
-          ref={passwordInputRef}
-          value={formData.password}
-          onChange={handlePasswordChange}
-          error={uiState.error?.field === 'password' ? uiState.error.message : undefined}
-          isDisabled={uiState.isLoading}
+        <PasswordField
+          name="password"
+          label="Password"
+          placeholder="••••••••"
+          autoComplete="current-password"
+          isRequired
+          disabled={isSubmitting}
         />
         
-        <RememberMeForgotPassword 
-          rememberMe={formData.rememberMe}
-          onRememberMeChange={handleRememberMeChange}
-          isDisabled={uiState.isLoading}
-        />
+        <RememberMeForgotPassword isDisabled={isSubmitting} />
         
-        <SubmitButton 
-          isLoading={uiState.isLoading} 
+        <SubmitButton
+          isLoading={isSubmitting}
+          text="Log in"
+          loadingText="Logging in..."
         />
-      </form>
+      </AuthForm>
       
       <FormDivider text="Or continue with" />
       
       <SocialLoginSection 
-        onGoogleLogin={handleGoogleLogin}
-        onFacebookLogin={handleFacebookLogin}
-        isDisabled={uiState.isLoading}
+        onGoogleLogin={() => handleSocialLogin('google')}
+        onFacebookLogin={() => handleSocialLogin('facebook')}
+        isDisabled={isSubmitting}
       />
       
       <SignUpPrompt />

@@ -1,45 +1,51 @@
 import React from 'react';
-import { Button } from '../ui/Button';
+import { Button } from '@/components/ui/Button';
+import { Loader } from '@/components/ui/Loader';
 
 interface SubmitButtonProps {
   /**
    * Whether the form is currently submitting
    */
-  isLoading: boolean;
+  isLoading?: boolean;
   
   /**
-   * Button text when not loading (defaults to "Log in")
+   * Text to display on the button
    */
   text?: string;
   
   /**
-   * Button text when loading (defaults to "Logging in...")
+   * Text to display when loading
    */
   loadingText?: string;
 }
 
 /**
- * SubmitButton component for auth forms
+ * SubmitButton component
  * 
- * A specialized Button component configured for form submission
- * with appropriate loading states and visual styling.
+ * A consistent button used for form submission with loading state handling.
+ * Includes accessibility attributes for loading state.
  */
 export const SubmitButton: React.FC<SubmitButtonProps> = ({
-  isLoading,
-  text = "Log in",
-  loadingText = "Logging in..."
+  isLoading = false,
+  text = 'Log in',
+  loadingText = 'Logging in...'
 }) => {
   return (
     <Button
       type="submit"
-      fullWidth
-      isLoading={isLoading}
-      loadingText={loadingText}
+      className="w-full"
       disabled={isLoading}
-      className="py-2.5" // Slightly taller button for better touch targets
       aria-busy={isLoading}
+      aria-disabled={isLoading}
     >
-      {text}
+      {isLoading ? (
+        <span className="flex items-center justify-center">
+          <Loader size="sm" className="mr-2" />
+          {loadingText}
+        </span>
+      ) : (
+        text
+      )}
     </Button>
   );
 };

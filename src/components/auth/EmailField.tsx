@@ -1,19 +1,19 @@
 import React, { forwardRef } from 'react';
-import { FormControl, Input } from '../ui/FormElements';
+import { TextField } from '@/components/ui/Form';
 
 interface EmailFieldProps {
   /**
    * Current email value
    */
-  value: string;
+  value?: string;
   
   /**
-   * Callback when email value changes
+   * Change handler
    */
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   
   /**
-   * Error message to display
+   * Error message
    */
   error?: string;
   
@@ -21,38 +21,45 @@ interface EmailFieldProps {
    * Whether the field is disabled
    */
   isDisabled?: boolean;
+  
+  /**
+   * Placeholder text
+   */
+  placeholder?: string;
+  
+  /**
+   * Whether the field is required
+   */
+  isRequired?: boolean;
 }
 
 /**
  * EmailField component
  * 
- * A specialized input field for email addresses that includes:
- * - Proper labeling
- * - Appropriate input type
- * - Autocomplete functionality
- * - Accessibility attributes
- * - Error handling
+ * A specialized text field for email input with consistent styling,
+ * validation, and accessibility features.
  */
-export const EmailField = forwardRef<HTMLInputElement, EmailFieldProps>(
-  ({ value, onChange, error, isDisabled }, ref) => (
-    <FormControl
-      id="email"
+export const EmailField = forwardRef<HTMLInputElement, EmailFieldProps>(({
+  value,
+  onChange,
+  error,
+  isDisabled,
+  placeholder = "your@email.com",
+  isRequired = true
+}, ref) => {
+  return (
+    <TextField
+      ref={ref}
+      name="email"
       label="Email"
-      error={error}
-      isRequired
-    >
-      <Input
-        ref={ref}
-        type="email"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="your@email.com"
-        autoComplete="email"
-        disabled={isDisabled}
-        aria-invalid={!!error}
-      />
-    </FormControl>
-  )
-);
+      type="email"
+      placeholder={placeholder}
+      autoComplete="email"
+      isRequired={isRequired}
+      disabled={isDisabled}
+      helperText={error}
+    />
+  );
+});
 
 EmailField.displayName = 'EmailField';
