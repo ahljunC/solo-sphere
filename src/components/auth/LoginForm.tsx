@@ -1,15 +1,15 @@
-import React from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-
-import { Button } from '../ui/Button';
-import { FormControl, Input, CheckboxControl } from '../ui/FormElements';
+import React, { useRef, useEffect, memo, useCallback } from 'react';
 import { useLoginForm } from '@/lib/hooks/useLoginForm';
+
 import { 
   ErrorAlert, 
   FormDivider, 
-  SocialButton, 
-  SignUpPrompt 
+  SignUpPrompt,
+  EmailField,
+  PasswordField,
+  RememberMeForgotPassword,
+  SubmitButton,
+  SocialLoginSection
 } from './';
 
 /**
@@ -45,12 +45,18 @@ interface LoginFormProps {
  * - Social login options
  * - "Remember me" functionality
  * - Forgot password link
+ * 
+ * Accessibility:
+ * - Proper focus management 
+ * - ARIA attributes for loading states
+ * - Descriptive error messaging
  */
-export const LoginForm: React.FC<LoginFormProps> = ({
+export const LoginForm: React.FC<LoginFormProps> = memo(({
   onSuccess,
   onError,
   redirectUrl = '/dashboard'
 }) => {
+  // Get form state and handlers from hook
   const {
     formData,
     uiState,
@@ -59,92 +65,96 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     handleSocialLogin
   } = useLoginForm(redirectUrl, onSuccess, onError);
   
+  // Create refs for focus management
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  
+  // Focus the field with error after submission
+  useEffect(() => {
+    if (uiState.error) {
+      if (uiState.error.field === 'email' && emailInputRef.current) {
+        emailInputRef.current.focus();
+      } else if (uiState.error.field === 'password' && passwordInputRef.current) {
+        passwordInputRef.current.focus();
+      }
+    }
+  }, [uiState.error]);
+  
+  // Memoized callbacks for field updates
+  const handleEmailChange = useCallback((value: string) => {
+    updateField('email', value);
+  }, [updateField]);
+  
+  const handlePasswordChange = useCallback((value: string) => {
+    updateField('password', value);
+  }, [updateField]);
+  
+  const handleRememberMeChange = useCallback((checked: boolean) => {
+    updateField('rememberMe', checked);
+  }, [updateField]);
+  
+  // Memoized callbacks for social login
+  const handleGoogleLogin = useCallback(() => {
+    handleSocialLogin('google');
+  }, [handleSocialLogin]);
+  
+  const handleFacebookLogin = useCallback(() => {
+    handleSocialLogin('facebook');
+  }, [handleSocialLogin]);
+  
   return (
     <div className="w-full">
-      <ErrorAlert message={uiState.error} />
+      <ErrorAlert 
+        message={uiState.error?.message} 
+        role="alert"
+        aria-live="assertive"
+      />
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Email field */}
-        <FormControl
-          id="email"
-          label="Email"
-          error={uiState.error && !formData.email ? 'Email is required' : undefined}
-          isRequired
-        >
-          <Input
-            type="email"
-            value={formData.email}
-            onChange={(e) => updateField('email', e.target.value)}
-            placeholder="your@email.com"
-            autoComplete="email"
-            disabled={uiState.isLoading}
-          />
-        </FormControl>
+      <form 
+        onSubmit={handleSubmit} 
+        className="space-y-6" 
+        noValidate
+        aria-describedby={uiState.error ? "login-form-error" : undefined}
+        aria-live="polite"
+      >
+        <EmailField 
+          ref={emailInputRef}
+          value={formData.email}
+          onChange={handleEmailChange}
+          error={uiState.error?.field === 'email' ? uiState.error.message : undefined}
+          isDisabled={uiState.isLoading}
+        />
         
-        {/* Password field */}
-        <FormControl
-          id="password"
-          label="Password"
-          error={uiState.error && !formData.password ? 'Password is required' : undefined}
-          isRequired
-        >
-          <Input
-            type="password"
-            value={formData.password}
-            onChange={(e) => updateField('password', e.target.value)}
-            placeholder="••••••••"
-            autoComplete="current-password"
-            disabled={uiState.isLoading}
-          />
-        </FormControl>
+        <PasswordField 
+          ref={passwordInputRef}
+          value={formData.password}
+          onChange={handlePasswordChange}
+          error={uiState.error?.field === 'password' ? uiState.error.message : undefined}
+          isDisabled={uiState.isLoading}
+        />
         
-        {/* Remember me and Forgot password */}
-        <div className="flex items-center justify-between">
-          <CheckboxControl
-            id="remember-me"
-            label="Remember me"
-            checked={formData.rememberMe}
-            onChange={(e) => updateField('rememberMe', e.target.checked)}
-            disabled={uiState.isLoading}
-          />
-          
-          <div className="text-sm">
-            <Link href="/auth/forgot-password" className="text-primary hover:text-primary-dark">
-              Forgot your password?
-            </Link>
-          </div>
-        </div>
+        <RememberMeForgotPassword 
+          rememberMe={formData.rememberMe}
+          onRememberMeChange={handleRememberMeChange}
+          isDisabled={uiState.isLoading}
+        />
         
-        {/* Submit button */}
-        <Button
-          type="submit"
-          fullWidth
-          isLoading={uiState.isLoading}
-          loadingText="Logging in..."
-          disabled={uiState.isLoading}
-        >
-          Log in
-        </Button>
+        <SubmitButton 
+          isLoading={uiState.isLoading} 
+        />
       </form>
       
       <FormDivider text="Or continue with" />
       
-      {/* Social login buttons */}
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <SocialButton
-          provider="google"
-          onClick={() => handleSocialLogin('google')}
-          disabled={uiState.isLoading}
-        />
-        
-        <SocialButton
-          provider="facebook"
-          onClick={() => handleSocialLogin('facebook')}
-          disabled={uiState.isLoading}
-        />
-      </div>
+      <SocialLoginSection 
+        onGoogleLogin={handleGoogleLogin}
+        onFacebookLogin={handleFacebookLogin}
+        isDisabled={uiState.isLoading}
+      />
       
       <SignUpPrompt />
     </div>
   );
-};
+});
+
+LoginForm.displayName = 'LoginForm';

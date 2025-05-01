@@ -15,6 +15,11 @@ interface SocialButtonProps {
    * Whether the button is disabled
    */
   disabled?: boolean;
+
+  /**
+   * Additional CSS classes
+   */
+  className?: string;
 }
 
 /**
@@ -26,7 +31,8 @@ interface SocialButtonProps {
 export const SocialButton: React.FC<SocialButtonProps> = ({ 
   provider, 
   onClick, 
-  disabled 
+  disabled,
+  className = ''
 }) => {
   // Provider-specific SVG icons
   const icons = {
@@ -51,7 +57,7 @@ export const SocialButton: React.FC<SocialButtonProps> = ({
   return (
     <button
       type="button"
-      className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      className={`inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${className}`}
       onClick={onClick}
       disabled={disabled}
       aria-label={`Sign in with ${providerNames[provider]}`}

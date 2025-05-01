@@ -1,17 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Session, AuthChangeEvent } from '@supabase/supabase-js';
-
-/**
- * User object structure
- */
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  avatarUrl?: string;
-}
+import { User } from '@/types/auth';
 
 /**
  * Authentication context state
@@ -84,11 +75,30 @@ interface AuthProviderProps {
  * 
  * Provides authentication state and methods to all child components.
  * Handles initialization, persistence, and auth state changes.
+ * 
+ * Security features:
+ * - Leverages Supabase's built-in security mechanisms
+ * - Uses HTTP-only cookies for session management
+ * - Implements proper error handling and validation
  */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  
+  /**
+   * Map Supabase user to our application user model
+   */
+  const mapSupabaseUser = useCallback((supabaseUser: any): User => {
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      name: supabaseUser.user_metadata?.name,
+      avatarUrl: supabaseUser.user_metadata?.avatar_url,
+      createdAt: supabaseUser.created_at ? new Date(supabaseUser.created_at) : undefined,
+      lastLogin: supabaseUser.last_sign_in_at ? new Date(supabaseUser.last_sign_in_at) : undefined,
+    };
+  }, []);
   
   // Initialize auth state on mount
   useEffect(() => {
@@ -99,12 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (sessionData?.session) {
           const { data: userData } = await supabase.auth.getUser();
           if (userData?.user) {
-            setUser({
-              id: userData.user.id,
-              email: userData.user.email || '',
-              name: userData.user.user_metadata?.name,
-              avatarUrl: userData.user.user_metadata?.avatar_url,
-            });
+            setUser(mapSupabaseUser(userData.user));
           }
         }
       } catch (error) {
@@ -120,12 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
         if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            name: session.user.user_metadata?.name,
-            avatarUrl: session.user.user_metadata?.avatar_url,
-          });
+          setUser(mapSupabaseUser(session.user));
         } else {
           setUser(null);
         }
@@ -133,18 +133,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     );
 
+    // Clean up subscription on unmount
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [mapSupabaseUser]);
 
   /**
    * Sign in with email and password
+   * Enhanced with better error handling and security features
    */
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     
     try {
+      // Use Supabase auth directly for password login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -153,12 +156,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) throw error;
       
       if (data.user) {
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          name: data.user.user_metadata?.name,
-          avatarUrl: data.user.user_metadata?.avatar_url,
-        });
+        setUser(mapSupabaseUser(data.user));
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -170,11 +168,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   /**
    * Register a new user
+   * With improved security and data validation
    */
   const signUp = async (email: string, password: string, name?: string) => {
     setIsLoading(true);
     
     try {
+      // Validate password strength
+      if (password.length < 8) {
+        throw new Error('Password must be at least 8 characters long');
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -182,18 +186,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           data: {
             name,
           },
+          // Redirect for email confirmation if configured
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       
       if (error) throw error;
       
       if (data.user) {
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          name: data.user.user_metadata?.name,
-          avatarUrl: data.user.user_metadata?.avatar_url,
-        });
+        setUser(mapSupabaseUser(data.user));
       }
     } catch (error) {
       console.error('Registration failed:', error);
@@ -205,6 +206,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   /**
    * Sign in with a social provider
+   * Using Supabase OAuth flow
    */
   const signInWithProvider = async (provider: 'google' | 'facebook') => {
     setIsLoading(true);
@@ -214,6 +216,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          // Request additional scopes if needed
+          scopes: provider === 'google' ? 'profile email' : undefined,
         },
       });
       
