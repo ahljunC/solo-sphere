@@ -3,12 +3,13 @@ import type { FormEvent } from 'react';
 
 interface FormContextValue<T> {
   values: T;
-  errors: Partial<Record<keyof T, string>>;
+  errors: Partial<Record<keyof T | 'form', string>>;
   touched: Partial<Record<keyof T, boolean>>;
   isSubmitting: boolean;
-  handleChange: (field: keyof T, value: any) => void;
+  handleChange: (field: keyof T, value: unknown) => void;
   handleBlur: (field: keyof T) => void;
-  setFieldError: (field: keyof T, error: string | null) => void;
+  setFieldError: (field: keyof T | 'form', error: string | null) => void;
+  setFormError: (error: string | null) => void;
 }
 
 const FormContext = createContext<FormContextValue<any> | undefined>(undefined);
@@ -29,7 +30,7 @@ interface FormProps<T> {
   className?: string;
 }
 
-export function Form<T extends Record<string, any>>({
+export function Form<T extends Record<string, unknown>>({
   initialValues,
   onSubmit,
   validate,
@@ -37,16 +38,16 @@ export function Form<T extends Record<string, any>>({
   className = ''
 }: FormProps<T>) {
   const [values, setValues] = useState<T>(initialValues);
-  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof T | 'form', string>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (field: keyof T, value: any) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
+  const handleChange = (field: keyof T, value: unknown) => {
+    setValues(prev => ({ ...prev, [field]: value }));
     
     // Clear field error when user starts typing
     if (errors[field]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
@@ -55,27 +56,31 @@ export function Form<T extends Record<string, any>>({
   };
 
   const handleBlur = (field: keyof T) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
+    setTouched(prev => ({ ...prev, [field]: true }));
     
     // Validate on blur if validate function provided
     if (validate) {
       const validationErrors = validate(values);
       if (validationErrors[field]) {
-        setErrors((prev) => ({ ...prev, [field]: validationErrors[field] }));
+        setErrors(prev => ({ ...prev, [field]: validationErrors[field] }));
       }
     }
   };
 
-  const setFieldError = (field: keyof T, error: string | null) => {
+  const setFieldError = (field: keyof T | 'form', error: string | null) => {
     if (error) {
-      setErrors((prev) => ({ ...prev, [field]: error }));
+      setErrors(prev => ({ ...prev, [field]: error }));
     } else {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
       });
     }
+  };
+  
+  const setFormError = (error: string | null) => {
+    setFieldError('form', error);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -100,6 +105,10 @@ export function Form<T extends Record<string, any>>({
     setIsSubmitting(true);
     try {
       await onSubmit(values);
+    } catch (error) {
+      // In case the onSubmit callback doesn't handle errors internally
+      console.error('Form submission error:', error);
+      setFormError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setIsSubmitting(false);
     }
@@ -112,7 +121,8 @@ export function Form<T extends Record<string, any>>({
     isSubmitting,
     handleChange,
     handleBlur,
-    setFieldError
+    setFieldError,
+    setFormError
   };
 
   return (

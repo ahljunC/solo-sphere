@@ -1,68 +1,137 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import { Field } from './Field';
 import { Input } from '../FormElements';
 import { useForm } from './Form';
+import { BaseFieldProps } from './TextField';
 
-interface PasswordFieldProps {
-  name: string;
-  label: string;
+interface PasswordFieldProps extends BaseFieldProps {
+  /**
+   * Input type
+   */
+  type?: 'password' | 'text';
+  
+  /**
+   * Placeholder text
+   */
   placeholder?: string;
-  helperText?: string;
-  isRequired?: boolean;
+  
+  /**
+   * HTML autocomplete attribute
+   */
   autoComplete?: string;
-  disabled?: boolean;
+  
+  /**
+   * Field value (for controlled usage)
+   */
+  value?: string;
+  
+  /**
+   * Change handler (for controlled usage)
+   */
+  onChange?: (value: string) => void;
+  
+  /**
+   * Blur handler (for controlled usage)
+   */
+  onBlur?: () => void;
+  
+  /**
+   * Additional CSS class names
+   */
+  className?: string;
 }
 
-export const PasswordField: React.FC<PasswordFieldProps> = ({
-  name,
-  label,
-  placeholder = "••••••••",
-  helperText,
-  isRequired,
-  autoComplete = "current-password",
-  disabled
-}) => {
-  const { values, handleChange, handleBlur, isSubmitting } = useForm<Record<string, any>>();
-  const [showPassword, setShowPassword] = useState(false);
-  
-  return (
-    <Field
-      name={name}
-      label={label}
-      helperText={helperText}
-      isRequired={isRequired}
-    >
-      <div className="relative">
-        <Input
-          id={name}
-          type={showPassword ? "text" : "password"}
-          value={values[name] || ''}
-          onChange={(e) => handleChange(name, e.target.value)}
-          onBlur={() => handleBlur(name)}
-          placeholder={placeholder}
-          autoComplete={autoComplete}
-          disabled={disabled || isSubmitting}
-          className="pr-10" // Add padding for the toggle button
-        />
-        <button
-          type="button"
-          className="absolute inset-y-0 right-0 flex items-center pr-3"
-          onClick={() => setShowPassword(!showPassword)}
-          aria-label={showPassword ? "Hide password" : "Show password"}
-          tabIndex={-1} // Don't include in tab order
-        >
-          {showPassword ? (
-            <EyeOffIcon className="h-5 w-5 text-gray-400" />
-          ) : (
-            <EyeIcon className="h-5 w-5 text-gray-400" />
-          )}
-        </button>
-      </div>
-    </Field>
-  );
-};
+/**
+ * PasswordField component
+ *
+ * A password input field with visibility toggle functionality.
+ * Can be used either as a controlled component by providing value/onChange,
+ * or as an uncontrolled component within a Form context.
+ */
+export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
+  ({
+    name,
+    label,
+    placeholder = "••••••••",
+    helperText,
+    required,
+    autoComplete = "current-password",
+    disabled,
+    value,
+    onChange,
+    onBlur,
+    className
+  }, ref) => {
+    // Use form context only if controlled props aren't provided
+    const form = useForm<Record<string, unknown>>();
+    const [showPassword, setShowPassword] = useState(false);
+    
+    // Handle changes with support for both controlled and uncontrolled modes
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value;
+      if (onChange) {
+        onChange(newValue);
+      } else {
+        form.handleChange(name, newValue);
+      }
+    };
+    
+    // Handle blur with support for both controlled and uncontrolled modes
+    const handleBlur = () => {
+      if (onBlur) {
+        onBlur();
+      } else {
+        form.handleBlur(name);
+      }
+    };
+    
+    // Toggle password visibility
+    const togglePasswordVisibility = () => {
+      setShowPassword(prev => !prev);
+    };
+    
+    return (
+      <Field
+        name={name}
+        label={label}
+        helperText={helperText}
+        required={required}
+      >
+        <div className="relative">
+          <Input
+            ref={ref}
+            id={name}
+            type={showPassword ? "text" : "password"}
+            value={value !== undefined ? value : (form.values[name] as string) || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder={placeholder}
+            autoComplete={autoComplete}
+            disabled={disabled || form.isSubmitting}
+            className={`pr-10 ${className || ''}`} // Add padding for the toggle button
+          />
+          <button
+            type="button"
+            className="absolute inset-y-0 right-0 flex items-center pr-3"
+            onClick={togglePasswordVisibility}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            tabIndex={-1} // Don't include in tab order
+          >
+            {showPassword ? (
+              <EyeOffIcon className="h-5 w-5 text-gray-400" />
+            ) : (
+              <EyeIcon className="h-5 w-5 text-gray-400" />
+            )}
+          </button>
+        </div>
+      </Field>
+    );
+  }
+);
 
-// Simple icon components
+PasswordField.displayName = 'PasswordField';
+
+// Icon components
 const EyeIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 

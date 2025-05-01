@@ -20,7 +20,7 @@ interface EmailFieldProps {
   /**
    * Whether the field is disabled
    */
-  isDisabled?: boolean;
+  disabled?: boolean;
   
   /**
    * Placeholder text
@@ -30,7 +30,7 @@ interface EmailFieldProps {
   /**
    * Whether the field is required
    */
-  isRequired?: boolean;
+  required?: boolean;
 }
 
 /**
@@ -43,9 +43,9 @@ export const EmailField = forwardRef<HTMLInputElement, EmailFieldProps>(({
   value,
   onChange,
   error,
-  isDisabled,
+  disabled,
   placeholder = "your@email.com",
-  isRequired = true
+  required = true
 }, ref) => {
   return (
     <TextField
@@ -55,9 +55,11 @@ export const EmailField = forwardRef<HTMLInputElement, EmailFieldProps>(({
       type="email"
       placeholder={placeholder}
       autoComplete="email"
-      isRequired={isRequired}
-      disabled={isDisabled}
+      required={required}
+      disabled={disabled}
       helperText={error}
+      value={value}
+      onChange={onChange}
     />
   );
 });

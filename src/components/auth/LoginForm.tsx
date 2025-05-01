@@ -135,7 +135,7 @@ export const LoginForm: React.FC<LoginFormProps> = memo(({
           type="email"
           placeholder="your@email.com"
           autoComplete="email"
-          isRequired
+          required
           disabled={isSubmitting}
         />
         
@@ -144,7 +144,7 @@ export const LoginForm: React.FC<LoginFormProps> = memo(({
           label="Password"
           placeholder="••••••••"
           autoComplete="current-password"
-          isRequired
+          required
           disabled={isSubmitting}
         />
         

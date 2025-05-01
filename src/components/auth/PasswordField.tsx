@@ -20,7 +20,7 @@ interface PasswordFieldProps {
   /**
    * Whether the field is disabled
    */
-  isDisabled?: boolean;
+  disabled?: boolean;
   
   /**
    * Placeholder text
@@ -30,7 +30,7 @@ interface PasswordFieldProps {
   /**
    * Whether the field is required
    */
-  isRequired?: boolean;
+  required?: boolean;
   
   /**
    * Auto-complete attribute
@@ -48,20 +48,23 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(({
   value,
   onChange,
   error,
-  isDisabled,
+  disabled,
   placeholder = "••••••••",
-  isRequired = true,
+  required = true,
   autoComplete = "current-password"
 }, ref) => {
   return (
     <BasePasswordField
+      ref={ref}
       name="password"
       label="Password"
       placeholder={placeholder}
       autoComplete={autoComplete}
-      isRequired={isRequired}
-      disabled={isDisabled}
+      required={required}
+      disabled={disabled}
       helperText={error}
+      value={value}
+      onChange={onChange}
     />
   );
 });

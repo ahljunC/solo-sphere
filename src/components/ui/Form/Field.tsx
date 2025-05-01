@@ -3,10 +3,29 @@ import { FormControl } from '../FormElements';
 import { useForm } from './Form';
 
 interface FieldProps {
+  /**
+   * Field name
+   */
   name: string;
+  
+  /**
+   * Field label
+   */
   label: string;
+  
+  /**
+   * Helper text displayed below the field
+   */
   helperText?: string;
-  isRequired?: boolean;
+  
+  /**
+   * Whether the field is required
+   */
+  required?: boolean;
+  
+  /**
+   * Field children
+   */
   children: React.ReactNode;
 }
 
@@ -14,11 +33,11 @@ export const Field: React.FC<FieldProps> = ({
   name,
   label,
   helperText,
-  isRequired,
+  required,
   children
 }) => {
   // Type assertion to help TypeScript understand we can use string keys
-  const { errors, touched } = useForm<Record<string, any>>();
+  const { errors, touched } = useForm<Record<string, unknown>>();
   const error = touched[name] && errors[name] ? errors[name] : undefined;
 
   return (
@@ -27,7 +46,7 @@ export const Field: React.FC<FieldProps> = ({
       label={label}
       helperText={helperText}
       error={error}
-      isRequired={isRequired}
+      isRequired={required}
     >
       {children}
     </FormControl>
