@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 /**
  * User object structure
@@ -87,28 +89,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
+  
   // Initialize auth state on mount
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // In a real implementation, this would check for an existing session
-        // For demonstration, we'll simulate a check for a stored user in localStorage
-        const storedUser = localStorage.getItem('authUser');
+        const { data: sessionData } = await supabase.auth.getSession();
         
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        if (sessionData?.session) {
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData?.user) {
+            setUser({
+              id: userData.user.id,
+              email: userData.user.email || '',
+              name: userData.user.user_metadata?.name,
+              avatarUrl: userData.user.user_metadata?.avatar_url,
+            });
+          }
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
-        // Clear any potentially corrupted auth state
-        localStorage.removeItem('authUser');
       } finally {
         setIsLoading(false);
       }
     };
 
     initAuth();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, session: Session | null) => {
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name,
+            avatarUrl: session.user.user_metadata?.avatar_url,
+          });
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   /**
@@ -118,20 +145,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      // In a real implementation, this would call an authentication API
-      // For demonstration, we'll simulate a successful auth after a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data
-      const userData: User = {
-        id: '123456',
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        name: email.split('@')[0],
-      };
+        password,
+      });
       
-      // Set the user in state and localStorage
-      setUser(userData);
-      localStorage.setItem('authUser', JSON.stringify(userData));
+      if (error) throw error;
+      
+      if (data.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.user_metadata?.name,
+          avatarUrl: data.user.user_metadata?.avatar_url,
+        });
+      }
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -147,20 +175,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      // In a real implementation, this would call a registration API
-      // For demonstration, we'll simulate a successful registration after a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data
-      const userData: User = {
-        id: '123456',
+      const { data, error } = await supabase.auth.signUp({
         email,
-        name: name || email.split('@')[0],
-      };
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
       
-      // Set the user in state and localStorage
-      setUser(userData);
-      localStorage.setItem('authUser', JSON.stringify(userData));
+      if (error) throw error;
+      
+      if (data.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.user_metadata?.name,
+          avatarUrl: data.user.user_metadata?.avatar_url,
+        });
+      }
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
@@ -176,21 +210,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      // In a real implementation, this would initiate OAuth with the provider
-      // For demonstration, we'll simulate a successful auth after a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
       
-      // Mock user data
-      const userData: User = {
-        id: '123456',
-        email: `user@${provider}.com`,
-        name: `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
-        avatarUrl: `https://via.placeholder.com/150?text=${provider.charAt(0).toUpperCase()}`,
-      };
+      if (error) throw error;
       
-      // Set the user in state and localStorage
-      setUser(userData);
-      localStorage.setItem('authUser', JSON.stringify(userData));
+      // The OAuth flow will redirect the user away from the app
+      // The user will be set via the onAuthStateChange listener when they return
     } catch (error) {
       console.error(`${provider} login failed:`, error);
       throw error;
@@ -206,15 +236,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      // In a real implementation, this would call a logout API
-      // For demonstration, we'll simulate a successful logout after a delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { error } = await supabase.auth.signOut();
       
-      // Clear the user from state and localStorage
+      if (error) throw error;
+      
       setUser(null);
-      localStorage.removeItem('authUser');
-      
-      // Redirect to login page
       router.push('/auth/login');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -231,12 +257,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      // In a real implementation, this would call a password reset API
-      // For demonstration, we'll simulate a successful request after a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
       
-      // In a real implementation, this would send a password reset email
-      console.log(`Password reset email sent to: ${email}`);
+      if (error) throw error;
     } catch (error) {
       console.error('Password reset failed:', error);
       throw error;
@@ -252,15 +277,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      // In a real implementation, this would call a profile update API
-      // For demonstration, we'll simulate a successful update after a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          name: data.name,
+          avatar_url: data.avatarUrl,
+        },
+      });
       
-      // Update the user in state and localStorage
+      if (error) throw error;
+      
       if (user) {
         const updatedUser = { ...user, ...data };
         setUser(updatedUser);
-        localStorage.setItem('authUser', JSON.stringify(updatedUser));
       }
     } catch (error) {
       console.error('Profile update failed:', error);
