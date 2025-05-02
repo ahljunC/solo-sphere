@@ -1,7 +1,7 @@
 import { supabase } from "./supabase";
 
 // Re-export everything from AuthContext for hooks-based usage
-export * from './auth/AuthContext';
+export * from './contexts/auth/AuthContext';
 
 // Direct utility functions for non-hook-based usage
 export async function getUser() {

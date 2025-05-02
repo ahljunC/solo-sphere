@@ -78,12 +78,17 @@ export const LoginForm: React.FC<LoginFormProps> = memo(({
   const validate = (values: LoginValues) => {
     const errors: Partial<Record<keyof LoginValues, string>> = {};
     
+    // Email validation with sequential checks instead of nesting
     if (!values.email) {
       errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+    }
+    
+    // Only check email format if email exists
+    if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
       errors.email = 'Please enter a valid email address';
     }
     
+    // Password validation
     if (!values.password) {
       errors.password = 'Password is required';
     }
@@ -92,32 +97,61 @@ export const LoginForm: React.FC<LoginFormProps> = memo(({
   };
   
   const handleSubmit = async (values: LoginValues) => {
+    // Reset state at the beginning
     setError(null);
     setIsSubmitting(true);
     
     try {
+      // Attempt sign in
       await signIn(values.email, values.password);
-      if (onSuccess) onSuccess();
+      
+      // Handle success case
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Navigate to destination on success
       router.push(redirectUrl);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Login failed';
-      setError(errorMessage);
-      if (onError) onError(err instanceof Error ? err : new Error(errorMessage));
+      // Format error consistently
+      const errorInstance = err instanceof Error ?
+        err :
+        new Error('Login failed');
+      
+      // Set user-facing error message
+      setError(errorInstance.message);
+      
+      // Call error handler if provided
+      if (onError) {
+        onError(errorInstance);
+      }
     } finally {
+      // Always reset submission state
       setIsSubmitting(false);
     }
   };
   
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    // Reset error state at the beginning
     setError(null);
     
     try {
+      // Attempt provider sign in
       await signInWithProvider(provider);
       // The OAuth flow will redirect the user away from the app
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : `${provider} login failed`;
-      setError(errorMessage);
-      if (onError) onError(err instanceof Error ? err : new Error(errorMessage));
+      // Format error consistently
+      const errorInstance = err instanceof Error ?
+        err :
+        new Error(`${provider} login failed`);
+      
+      // Set user-facing error message
+      setError(errorInstance.message);
+      
+      // Call error handler if provided
+      if (onError) {
+        onError(errorInstance);
+      }
     }
   };
   
@@ -170,5 +204,4 @@ export const LoginForm: React.FC<LoginFormProps> = memo(({
     </div>
   );
 });
-
 LoginForm.displayName = 'LoginForm';
